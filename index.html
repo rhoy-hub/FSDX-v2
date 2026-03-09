@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flat Shot DX</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-container">
+
+  <!-- ===================== TITLE SCREEN ===================== -->
+  <div id="title-screen" class="screen active pixel-bg">
+    <canvas id="starCanvas" class="stars"></canvas>
+    <div class="title-logo" style="z-index:2">
+      <div class="title-main">Flat Shot DX</div>
+      <div class="title-sub">★ RESCUE · SHOOT · SURVIVE ★</div>
+    </div>
+    <div style="font-size:32px;margin-bottom:14px;animation:float 2s ease-in-out infinite;z-index:2;position:relative;">🏃</div>
+    <div style="z-index:2;color:#00ffcc;font-size:8px;margin-bottom:18px;text-shadow:0 0 8px #00ffcc;">
+      🧑 TOTAL RESCUED: <span id="rescued-stat">0</span>
+    </div>
+    <div style="z-index:2;display:flex;flex-direction:column;align-items:center;">
+      <button class="menu-btn" onclick="showNewGamePanel()">▶ NEW GAME</button>
+      <button class="menu-btn" id="continue-btn" onclick="showContinuePanel()">⟳ CONTINUE</button>
+      <button class="menu-btn" onclick="showSettings()">⚙ SETTINGS</button>
+      <button class="menu-btn" onclick="showHowToPlay()">📖 HOW TO PLAY</button>
+      <button class="menu-btn" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
+    </div>
+    <div class="controls-hint">
+      WASD / ARROWS = MOVE &nbsp;|&nbsp; SPACE = JUMP &nbsp;|&nbsp; CLICK / Z = SHOOT &nbsp;|&nbsp; SHIFT = DASH &nbsp;|&nbsp; NEAR CAGE = RESCUE 🧑
+    </div>
+    <div class="pixel-ground"></div>
+    <style>@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}</style>
+  </div>
+
+  <!-- ===================== NEW GAME — USERNAME PANEL ===================== -->
+  <div id="newgame-screen" class="screen pixel-bg">
+    <canvas id="starCanvas2" class="stars"></canvas>
+    <div style="z-index:2;width:min(460px,88vw);">
+      <div class="panel-box" id="ng-box">
+        <!-- Header -->
+        <div class="panel-header" style="color:#ff4500;text-shadow:0 0 12px #ff4500;">
+          ▶ NEW GAME
+        </div>
+        <div class="panel-sub">ENTER YOUR CALLSIGN, SOLDIER</div>
+
+        <!-- Character avatar picker -->
+        <div style="display:flex;gap:10px;justify-content:center;margin:18px 0 10px;">
+          <div class="avatar-opt selected" data-av="🏃" onclick="pickAvatar(this,'🏃')">🏃</div>
+          <div class="avatar-opt" data-av="🧑‍🚀" onclick="pickAvatar(this,'🧑‍🚀')">🧑‍🚀</div>
+          <div class="avatar-opt" data-av="🥷" onclick="pickAvatar(this,'🥷')">🥷</div>
+          <div class="avatar-opt" data-av="👨‍✈️" onclick="pickAvatar(this,'👨‍✈️')">👨‍✈️</div>
+          <div class="avatar-opt" data-av="🤖" onclick="pickAvatar(this,'🤖')">🤖</div>
+        </div>
+        <div style="font-size:7px;color:#ff950088;text-align:center;margin-bottom:16px;">PICK YOUR AVATAR</div>
+
+        <!-- Username input -->
+        <div class="input-row">
+          <label class="input-label">CALLSIGN</label>
+          <input
+            id="ng-username"
+            class="pixel-input"
+            type="text"
+            maxlength="12"
+            placeholder="TYPE HERE..."
+            oninput="validateNewGame()"
+            onkeydown="if(event.key==='Enter')confirmNewGame()"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div id="ng-error" class="input-error"></div>
+        </div>
+
+        <!-- Char count -->
+        <div style="text-align:right;font-size:7px;color:#ff450066;margin-top:-6px;margin-bottom:14px;">
+          <span id="ng-charcount">0</span>/12
+        </div>
+
+        <!-- Difficulty quick-pick -->
+        <div class="input-row" style="margin-bottom:18px;">
+          <label class="input-label">DIFFICULTY</label>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="diff-pick" id="ngd-easy"   onclick="pickDiff('easy')">EASY</button>
+            <button class="diff-pick active" id="ngd-normal" onclick="pickDiff('normal')">NORMAL</button>
+            <button class="diff-pick" id="ngd-hard"   onclick="pickDiff('hard')">HARD</button>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
+          <button class="menu-btn" id="ng-confirm" style="min-width:160px;font-size:9px;" onclick="confirmNewGame()">
+            START MISSION ▶
+          </button>
+          <button class="menu-btn" style="min-width:120px;font-size:9px;border-color:#888;color:#888;" onclick="showTitle()">
+            ◀ BACK
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="pixel-ground"></div>
+  </div>
+
+  <!-- ===================== CONTINUE — PLAYER SELECT PANEL ===================== -->
+  <div id="continue-screen" class="screen pixel-bg">
+    <canvas id="starCanvas3" class="stars"></canvas>
+    <div style="z-index:2;width:min(520px,92vw);">
+      <div class="panel-box">
+        <div class="panel-header" style="color:#4eff91;text-shadow:0 0 12px #4eff91;">
+          ⟳ CONTINUE
+        </div>
+        <div class="panel-sub">SELECT OR SEARCH YOUR PROFILE</div>
+
+        <!-- Search bar -->
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            id="cs-search"
+            class="pixel-input search-input"
+            type="text"
+            placeholder="SEARCH CALLSIGN..."
+            oninput="filterProfiles()"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="search-clear" onclick="clearSearch()" title="Clear">✕</button>
+        </div>
+
+        <!-- Profile list -->
+        <div id="profile-list" class="profile-list">
+          <!-- injected by JS -->
+        </div>
+
+        <!-- No results -->
+        <div id="no-profiles" class="no-profiles" style="display:none;">
+          NO PROFILES FOUND.<br>
+          <span style="color:#ff450088;font-size:7px;">START A NEW GAME FIRST.</span>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;">
+          <button class="menu-btn" id="cs-start" style="min-width:160px;font-size:9px;opacity:0.4;pointer-events:none;" onclick="confirmContinue()">
+            ▶ LOAD PROFILE
+          </button>
+          <button class="menu-btn" style="min-width:120px;font-size:9px;border-color:#888;color:#888;" onclick="showTitle()">
+            ◀ BACK
+          </button>
+          <button class="menu-btn" style="min-width:140px;font-size:9px;border-color:#ff4500;color:#ff4500;" onclick="showTitle()">
+            🏠 MAIN MENU
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="pixel-ground"></div>
+  </div>
+
+  <!-- ===================== HOW TO PLAY SCREEN ===================== -->
+  <div id="howtoplay-screen" class="screen pixel-bg">
+    <canvas id="starCanvas4" class="stars"></canvas>
+    <div style="z-index:2;width:min(700px,94vw);max-height:90vh;overflow-y:auto;" class="htp-scroll">
+      <div class="panel-box htp-panel">
+        <div class="panel-header" style="color:#00ffcc;text-shadow:0 0 12px #00ffcc;margin-bottom:6px;">
+          📖 HOW TO PLAY
+        </div>
+        <div class="panel-sub">MASTER THE BATTLEFIELD, SOLDIER</div>
+
+        <!-- Controls Section -->
+        <div class="htp-section">
+          <div class="htp-section-title" style="color:#ff9500;">⌨️ KEYBOARD CONTROLS</div>
+          <div class="htp-grid">
+            <div class="htp-row"><div class="htp-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd></div><div class="htp-desc">MOVE &amp; AIM</div></div>
+            <div class="htp-row"><div class="htp-keys"><kbd>SPACE</kbd> or <kbd>W</kbd> / <kbd>↑</kbd></div><div class="htp-desc">JUMP (hold for higher)</div></div>
+            <div class="htp-row"><div class="htp-keys"><kbd>CLICK</kbd> or <kbd>Z</kbd></div><div class="htp-desc">SHOOT toward cursor</div></div>
+            <div class="htp-row"><div class="htp-keys"><kbd>SHIFT</kbd></div><div class="htp-desc">DASH (invincible dash burst)</div></div>
+            <div class="htp-row"><div class="htp-keys"><kbd>ESC</kbd></div><div class="htp-desc">PAUSE / BACK TO MAP</div></div>
+            <div class="htp-row"><div class="htp-keys">Walk near 🔒 CAGE</div><div class="htp-desc">AUTO RESCUE prisoner</div></div>
+          </div>
+        </div>
+
+        <!-- Objective Section -->
+        <div class="htp-section">
+          <div class="htp-section-title" style="color:#4eff91;">🎯 MISSION OBJECTIVE</div>
+          <div class="htp-cards">
+            <div class="htp-card"><div class="htp-card-icon">🧑</div><div class="htp-card-text">RESCUE prisoners hidden in cages across each level. Walk close to free them!</div></div>
+            <div class="htp-card"><div class="htp-card-icon">👾</div><div class="htp-card-text">DEFEAT all enemies including the fearsome ALIEN BOSS guarding the exit.</div></div>
+            <div class="htp-card"><div class="htp-card-icon">🏁</div><div class="htp-card-text">REACH the green finish flag at the far right end of the level to complete the mission.</div></div>
+          </div>
+        </div>
+
+        <!-- Pickups -->
+        <div class="htp-section">
+          <div class="htp-section-title" style="color:#ffcc00;">💊 PICKUPS</div>
+          <div class="htp-grid">
+            <div class="htp-row"><div class="htp-keys" style="color:#ff4444;">❤️ HEALTH PACK</div><div class="htp-desc">Restores your HP. Don't die!</div></div>
+            <div class="htp-row"><div class="htp-keys" style="color:#ff9500;">🔶 AMMO BOX</div><div class="htp-desc">Refills bullets. Run dry = silence!</div></div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="htp-section">
+          <div class="htp-section-title" style="color:#cc44ff;">💡 PRO TIPS</div>
+          <div class="htp-tips">
+            <div class="htp-tip">⚡ DASH through enemy fire — it grants brief invincibility frames!</div>
+            <div class="htp-tip">🗺 Use the MINIMAP (top-right) to spot enemies, bosses &amp; prisoners.</div>
+            <div class="htp-tip">🎯 Aim UP at flyers, they move fast and shoot back!</div>
+            <div class="htp-tip">💀 BOSS turns ENRAGED below 40% HP — get aggressive fast!</div>
+            <div class="htp-tip">⭐ LEVEL 6 FINAL BOSS: Bullets won't work! Jump on ⭐ STAR PADS to launch high, then LAND ON THE BOSS to stomp it to death!</div>
+            <div class="htp-tip">🏆 More rescues = bigger score bonus at mission complete!</div>
+          </div>
+        </div>
+
+        <!-- Mobile note -->
+        <div class="htp-section htp-mobile-note">
+          <div class="htp-section-title" style="color:#00aaff;">📱 MOBILE / TABLET</div>
+          <div style="color:#aac4ff;font-size:7px;line-height:2.2;text-align:center;">
+            ON-SCREEN BUTTONS APPEAR AUTOMATICALLY ON TOUCH DEVICES.<br>
+            TAP SHOOT BUTTON OR TAP THE GAME SCREEN TO FIRE.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px;">
+          <button class="menu-btn" style="min-width:160px;font-size:9px;" onclick="showTitle()">◀ BACK TO MENU</button>
+          <button class="menu-btn" style="min-width:160px;font-size:9px;border-color:#4eff91;color:#4eff91;" onclick="htpGoToGame()">▶ START GAME</button>
+        </div>
+      </div>
+    </div>
+    <div class="pixel-ground"></div>
+  </div>
+
+  <!-- ===================== MAP SCREEN ===================== -->
+  <div id="map-screen" class="screen">
+    <div class="map-title">⬡ SELECT MISSION ⬡</div>
+
+    <!-- Active player badge -->
+    <div id="map-player-badge" class="player-badge" style="display:none;">
+      <span id="map-player-avatar">🏃</span>
+      <span id="map-player-name">PLAYER</span>
+      <span class="badge-sep">|</span>
+      <span id="map-player-rescued" style="color:#00ffcc;">🧑 0</span>
+    </div>
+
+    <div class="map-world" id="map-world">
+      <canvas id="mapCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="back-btn" onclick="showTitle()">🏠 MAIN MENU</button>
+      <button class="back-btn" style="border-color:#888;color:#888;" onclick="showContinuePanel()">◀ PROFILES</button>
+      <button class="back-btn" style="border-color:#ffcc00;color:#ffcc00;" onclick="showLeaderboard()">🏆 SCORES</button>
+    </div>
+    <div style="margin-top:8px;font-size:7px;color:#4eff9188;">
+      CLICK A NODE TO START &nbsp;·&nbsp; 🟡 = AVAILABLE &nbsp;·&nbsp; 🟢 = COMPLETED &nbsp;·&nbsp; 🔒 = LOCKED
+    </div>
+  </div>
+
+  <!-- ===================== SETTINGS SCREEN ===================== -->
+  <div id="settings-screen" class="screen">
+    <div class="settings-box">
+      <div class="settings-title">⚙ SETTINGS</div>
+      <div class="setting-row">
+        <span>SOUND FX</span>
+        <button class="toggle-btn on" id="sfx-toggle" onclick="toggleSetting('sfx')">ON</button>
+      </div>
+      <div class="setting-row">
+        <span>MUSIC</span>
+        <button class="toggle-btn on" id="music-toggle" onclick="toggleSetting('music')">ON</button>
+      </div>
+      <div class="setting-row">
+        <span>VOLUME</span>
+        <div class="slider-wrap">
+          <input type="range" min="0" max="100" value="70" id="vol-slider">
+          <span id="vol-val" style="color:#00aaff;font-size:8px;">70</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>DIFFICULTY</span>
+        <div style="display:flex;gap:6px;">
+          <button class="toggle-btn"    id="diff-easy"   onclick="setDiff('easy')">EASY</button>
+          <button class="toggle-btn on" id="diff-normal" onclick="setDiff('normal')">NORM</button>
+          <button class="toggle-btn"    id="diff-hard"   onclick="setDiff('hard')">HARD</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>SHOW FPS</span>
+        <button class="toggle-btn" id="fps-toggle" onclick="toggleSetting('fps')">OFF</button>
+      </div>
+      <div style="text-align:center;margin-top:20px;">
+        <button class="back-btn" onclick="showTitle()">◀ BACK TO MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LEADERBOARD SCREEN ===================== -->
+  <div id="leaderboard-screen" class="screen">
+    <div class="lb-title">🏆 LEADERBOARD</div>
+    <div class="lb-table">
+      <div class="lb-header">
+        <span>RANK</span><span>NAME</span><span>LV</span><span>SCORE</span><span>🧑</span>
+      </div>
+      <div id="lb-rows"></div>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="back-btn" style="border-color:#cc44ff;color:#cc44ff;" onclick="showTitle()">🏠 MENU</button>
+      <button class="back-btn" style="border-color:#cc44ff;color:#cc44ff;" onclick="showMapScreen()">🗺 MAP</button>
+    </div>
+  </div>
+
+  <!-- ===================== GAME CANVAS ===================== -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ===================== IN-GAME NAV BAR ===================== -->
+  <div id="game-nav">
+    <button class="game-nav-btn" onclick="pauseToMap()" title="Back to Map">🗺 MAP</button>
+    <div id="game-nav-player">
+      <span id="gn-avatar">🏃</span>
+      <span id="gn-name">PLAYER</span>
+    </div>
+    <button class="game-nav-btn" onclick="pauseToTitle()" title="Main Menu">🏠 MENU</button>
+  </div>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud">
+    <div class="hud-block">
+      <div class="hud-label">HEALTH</div>
+      <div class="health-bar"><div class="health-fill" id="health-fill" style="width:100%"></div></div>
+      <div class="hud-val" id="hp-val">100</div>
+    </div>
+    <div class="hud-block" style="text-align:center;">
+      <div class="hud-label">LEVEL <span id="hud-level">1</span></div>
+      <div class="hud-val" id="hud-score">0</div>
+      <div class="hud-label" style="margin-top:3px;">SCORE</div>
+      <div style="margin-top:4px;color:#00ffcc;font-size:7px;">🧑 <span id="hud-rescued">0</span></div>
+    </div>
+    <div class="hud-block" style="text-align:right;">
+      <div class="hud-label">AMMO</div>
+      <div id="ammo-display"></div>
+      <div class="hud-label" style="margin-top:4px;color:#fff;" id="ammo-count">30</div>
+    </div>
+  </div>
+
+  <!-- ===================== WIN OVERLAY ===================== -->
+  <div class="overlay-screen" id="overlay-win">
+    <div class="overlay-box win">
+      <div class="overlay-title">MISSION COMPLETE!</div>
+      <div class="score-display">SCORE: <span id="win-score">0</span></div>
+      <div class="score-display" style="color:#ff9900;font-size:9px;">ENEMIES: <span id="win-kills">0</span></div>
+      <div class="score-display" style="color:#00ffcc;font-size:10px;">
+        🧑 RESCUED: <span id="win-rescued">0</span>
+        <span style="color:#ffff00;font-size:8px;margin-left:6px;" id="win-bonus">+0</span>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="menu-btn" style="min-width:120px;font-size:9px;" onclick="nextLevel()">NEXT ▶</button>
+        <button class="menu-btn" style="min-width:110px;font-size:9px;border-color:#4eff91;color:#4eff91;" onclick="showMapScreen()">🗺 MAP</button>
+        <button class="menu-btn" style="min-width:120px;font-size:9px;border-color:#ff4500;color:#ff4500;" onclick="pauseToTitle()">🏠 MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LOSE OVERLAY ===================== -->
+  <div class="overlay-screen" id="overlay-lose">
+    <div class="overlay-box lose">
+      <div class="overlay-title">YOU DIED</div>
+      <div class="score-display">SCORE: <span id="lose-score">0</span></div>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="menu-btn" style="min-width:110px;font-size:9px;" onclick="restartLevel()">RETRY</button>
+        <button class="menu-btn" style="min-width:110px;font-size:9px;border-color:#ff3344;color:#ff3344;" onclick="showMapScreen()">🗺 MAP</button>
+        <button class="menu-btn" style="min-width:120px;font-size:9px;border-color:#ff4500;color:#ff4500;" onclick="pauseToTitle()">🏠 MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PAUSE CONFIRM MODAL ===================== -->
+  <div class="overlay-screen" id="overlay-pause">
+    <div class="overlay-box" style="border-color:#ffcc00;box-shadow:0 0 30px #ffcc0066;">
+      <div class="overlay-title" style="color:#ffcc00;font-size:16px;">⏸ PAUSED</div>
+      <div style="color:#aaa;font-size:8px;margin-bottom:18px;" id="pause-msg">LEAVE THIS MISSION?</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="menu-btn" style="min-width:120px;font-size:9px;" onclick="resumeGame()">▶ RESUME</button>
+        <button class="menu-btn" id="pause-confirm-btn" style="min-width:130px;font-size:9px;border-color:#ff4500;color:#ff4500;" onclick="executePauseAction()">CONFIRM LEAVE</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===================== MOBILE TOUCH CONTROLS ===================== -->
+  <div id="mobile-controls" style="display:none;">
+    <!-- Virtual Joystick (left side) -->
+    <div id="joystick-zone">
+      <div id="joystick-base">
+        <div id="joystick-knob"></div>
+      </div>
+      <div id="joystick-hint">MOVE</div>
+    </div>
+    <!-- Jump button (above joystick) -->
+    <button class="mb-btn mb-jump-btn" id="mb-jump" ontouchstart="mbJumpPress(event)" ontouchend="mbJumpRelease(event)">▲<br><span style="font-size:6px;font-family:'Press Start 2P',monospace;">JUMP</span></button>
+    <!-- Action buttons (right side) -->
+    <div id="action-pad">
+      <button class="mb-btn action-shoot" id="mb-shoot" ontouchstart="mbShootPress(event)" ontouchend="mbShootRelease(event)">🔥<br><span style="font-size:6px;font-family:'Press Start 2P',monospace;">SHOOT</span></button>
+      <button class="mb-btn action-dash"  id="mb-dash"  ontouchstart="mbDashPress(event)"  ontouchend="mbDashRelease(event)">⚡<br><span style="font-size:6px;font-family:'Press Start 2P',monospace;">DASH</span></button>
+    </div>
+  </div>
+
+</div><!-- /game-container -->
+<script src="game.js"></script>
+</body>
+</html>
